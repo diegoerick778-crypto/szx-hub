@@ -1,5 +1,5 @@
--- Carrega a biblioteca Rayfield atualizada e limpa instâncias antigas se houver
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu'))()
+-- Carrega a biblioteca Rayfield atualizada
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "✨ szx hub | Premium Edition ✨",
@@ -25,11 +25,11 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 
--- ABAS COM ÍCONES ATRAENTES
-local TabMovimento = Window:CreateTab("Movimento", "rewind") -- Ícone de velocidade/movimento
-local TabCombate = Window:CreateTab("Combate & Visual", "swords") -- Ícone de combate
-local TabTeleporte = Window:CreateTab("Teleportes", "map-pin") -- Ícone de localização
-local TabJogadores = Window:CreateTab("Painel de Jogadores", "users") -- Ícone de comunidade
+-- ABAS
+local TabMovimento = Window:CreateTab("Movimento", "rewind")
+local TabCombate = Window:CreateTab("Combate & Visual", "swords")
+local TabTeleporte = Window:CreateTab("Teleportes", "map-pin")
+local TabJogadores = Window:CreateTab("Painel de Jogadores", "users")
 
 -- VARIÁVEIS DE ESTADO
 local noclipActive = false
@@ -38,16 +38,15 @@ local antiFlingActive = false
 local espActive = false
 local killAuraRadius = 15
 
--- LABELS FLUTUANTES (AMIGÁVEIS PARA O USUÁRIO)
 local FPSLabel = TabCombate:CreateLabel("Medidor de Desempenho desativado")
 
--- SISTEMA ATUALIZÁVEL DE FPS (Roda em segundo plano de forma otimizada)
+-- FPS Counter
 local fpsCounter = 0
 RunService.RenderStepped:Connect(function(deltaTime)
     fpsCounter = math.floor(1 / deltaTime)
 end)
 
--- LOOP DO KILL AURA COM SELECTION SPHERE
+-- KILL AURA
 local SelectionSphere = Instance.new("SelectionSphere")
 SelectionSphere.Color3 = Color3.fromRGB(255, 60, 60)
 SelectionSphere.Transparency = 0.5
@@ -55,21 +54,17 @@ SelectionSphere.Transparency = 0.5
 task.spawn(function()
     while task.wait(0.1) do
         if killAuraActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            -- Posiciona o círculo visual perfeitamente no jogador
             SelectionSphere.Parent = LocalPlayer.Character.HumanoidRootPart
             SelectionSphere.Adornee = LocalPlayer.Character.HumanoidRootPart
             
-            -- Detecta inimigos próximos dentro do raio definido
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
                     local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
                     if distance <= killAuraRadius and player.Character.Humanoid.Health > 0 then
-                        -- Lógica universal de ataque simulado (pode ser adaptada para ferramentas do seu jogo)
                         local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                         if tool then 
                             tool:Activate() 
                         end
-                        -- Altera sutilmente a cor para indicar que está batendo
                         SelectionSphere.Color3 = Color3.fromRGB(255, 0, 0)
                     end
                 end
@@ -80,7 +75,7 @@ task.spawn(function()
     end
 end)
 
--- LOOP DO NOCLIP SEGURO
+-- NOCLIP
 RunService.Stepped:Connect(function()
     if noclipActive and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -91,7 +86,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- ==================== 1. ABA MOVIMENTO ====================
+-- ==================== MOVIMENTO ====================
 TabMovimento:CreateSlider({
    Name = "Velocidade Ajustável",
    Min = 16,
@@ -107,7 +102,7 @@ TabMovimento:CreateSlider({
 })
 
 TabMovimento:CreateToggle({
-   Name = "✨ Ativar NoClip (Atravessar Paredes)",
+   Name = "✨ Ativar NoClip",
    CurrentValue = false,
    Callback = function(Value)
       noclipActive = Value
@@ -121,7 +116,7 @@ TabMovimento:CreateToggle({
       if LocalPlayer.Character then
           for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
               if part:IsA("BasePart") or part:IsA("Decal") then
-                  part.Transparency = Value and 0.5 or 0 -- 0.5 deixa você fantasma para você mesmo não se perder
+                  part.Transparency = Value and 0.5 or 0
               end
           end
       end
@@ -129,7 +124,7 @@ TabMovimento:CreateToggle({
 })
 
 TabMovimento:CreateToggle({
-   Name = "🛡️ Proteção Anti-Fling",
+   Name = "🛡️ Anti-Fling",
    CurrentValue = false,
    Callback = function(Value)
       antiFlingActive = Value
@@ -139,9 +134,9 @@ TabMovimento:CreateToggle({
    end,
 })
 
--- ==================== 2. ABA COMBATE & VISUAL ====================
+-- ==================== COMBATE ====================
 TabCombate:CreateToggle({
-   Name = "⚔️ Ativar Kill Aura",
+   Name = "⚔️ Kill Aura",
    CurrentValue = false,
    Callback = function(Value)
       killAuraActive = Value
@@ -149,7 +144,7 @@ TabCombate:CreateToggle({
 })
 
 TabCombate:CreateSlider({
-   Name = "Alcance da Aura (Raio do Círculo)",
+   Name = "Alcance da Aura",
    Min = 5,
    Max = 50,
    DefaultValue = 15,
@@ -161,7 +156,7 @@ TabCombate:CreateSlider({
 })
 
 TabCombate:CreateToggle({
-   Name = "👁️ ESP (Ver Jogadores pelas Paredes)",
+   Name = "👁️ ESP",
    CurrentValue = false,
    Callback = function(Value)
       espActive = Value
@@ -184,7 +179,7 @@ TabCombate:CreateToggle({
 })
 
 TabCombate:CreateToggle({
-   Name = "📦 Expandir Hitboxes dos Inimigos",
+   Name = "📦 Expandir Hitboxes",
    CurrentValue = false,
    Callback = function(Value)
       for _, player in pairs(Players:GetPlayers()) do
@@ -197,21 +192,21 @@ TabCombate:CreateToggle({
 })
 
 TabCombate:CreateToggle({
-   Name = "📊 Exibir Contador de FPS",
+   Name = "📊 FPS",
    CurrentValue = false,
    Callback = function(Value)
       task.spawn(function()
           while Value do
-              FPSLabel:Set("Taxa de Quadros Atual: " .. fpsCounter .. " FPS")
+              FPSLabel:Set("FPS: " .. fpsCounter)
               task.wait(0.5)
           end
-          FPSLabel:Set("Medidor de Desempenho desativado")
+          FPSLabel:Set("Medidor desativado")
       end)
    end,
 })
 
 TabCombate:CreateSlider({
-   Name = "Ajuste de Tela (FOV / Esticar)",
+   Name = "FOV",
    Min = 70,
    Max = 120,
    DefaultValue = 70,
@@ -222,9 +217,9 @@ TabCombate:CreateSlider({
    end,
 })
 
--- ==================== 3. ABA TELEPORTES ====================
+-- ==================== TELEPORTES ====================
 TabTeleporte:CreateButton({
-   Name = "📍 Teleportar ao Jogador Mais Próximo (tp)",
+   Name = "📍 Teleportar ao Mais Próximo",
    Callback = function()
       local target = nil
       local maxDist = math.huge
@@ -239,13 +234,13 @@ TabTeleporte:CreateButton({
       end
       if target then
           LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
-          Rayfield:Notify({Name = "Sucesso", Content = "Teleportado para: " .. target.DisplayName, Duration = 2})
+          Rayfield:Notify({Name = "Sucesso", Content = "Teleportado!", Duration = 2})
       end
    end,
 })
 
 TabTeleporte:CreateButton({
-   Name = "🎒 Coletar Itens Automaticamente (Touch)",
+   Name = "🎒 Coletar Itens",
    Callback = function()
       local count = 0
       for _, v in pairs(workspace:GetDescendants()) do
@@ -256,22 +251,30 @@ TabTeleporte:CreateButton({
               count = count + 1
           end
       end
-      Rayfield:Notify({Name = "Coletor", Content = "Interagiu com " .. count .. " itens com sucesso!", Duration = 2})
+      Rayfield:Notify({Name = "Coletor", Content = "Coletados " .. count .. " itens!", Duration = 2})
    end,
 })
 
--- ==================== 4. ABA PAINEL JOGADORES ====================
+-- ==================== PAINEL JOGADORES ====================
 TabJogadores:CreateButton({
-   Name = "🌪️ Executar Ataque Fling (Empurrar Longe)",
+   Name = "🌪️ Fling Attack",
    Callback = function()
-      -- Executa uma força física rotacional extrema para empurrar o jogador mais próximo para longe
       local target = nil
       local maxDist = math.huge
       for _, p in pairs(Players:GetPlayers()) do
           if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
               local dist = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-              if dist < maxDist then maxDist = dist target = p end
+              if dist < maxDist then
+                  maxDist = dist
+                  target = p
+              end
           end
       end
-
       
+      if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+          local humanoidRootPart = target.Character.HumanoidRootPart
+          humanoidRootPart.Velocity = Vector3.new(math.random(-100, 100), math.random(50, 100), math.random(-100, 100))
+          Rayfield:Notify({Name = "Fling", Content = "Ataque executado!", Duration = 2})
+      end
+   end,
+})
