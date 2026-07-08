@@ -1,6 +1,7 @@
 -- Carrega a biblioteca Rayfield atualizada
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- APLICAR TEMA ROXO NO RAYFIELD
 local Window = Rayfield:CreateWindow({
    Name = "✨ szx hub | Premium Edition ✨",
    LoadingTitle = "Iniciando szx hub...",
@@ -18,15 +19,19 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- Customizar cores do menu para roxo
-local Purple = {
-   SchemeColor = "Purple",
-   Background = Color3.fromRGB(45, 0, 60),
-   Surface = Color3.fromRGB(60, 0, 80),
-   Contrast = Color3.fromRGB(120, 30, 160),
-   TextColor = Color3.fromRGB(220, 180, 255),
-   OutlineColor = Color3.fromRGB(100, 0, 150)
-}
+-- APLICAR TEMA ROXO
+pcall(function()
+    Window.UI.Window.BackgroundColor3 = Color3.fromRGB(45, 0, 60)
+    Window.UI.Window.BackgroundTransparency = 0.1
+    
+    -- Colorir abas roxo
+    for _, tab in pairs(Window.UI.Tabs:GetChildren()) do
+        if tab:IsA("TextButton") then
+            tab.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
+            tab.TextColor3 = Color3.fromRGB(220, 180, 255)
+        end
+    end
+end)
 
 -- SERVIÇOS DO ROBLOX
 local Players = game:GetService("Players")
@@ -145,7 +150,7 @@ if isMobile then
     mainGui.ResetOnSpawn = false
     mainGui.Parent = mobileJoystick
     
-    -- Joystick Background
+    -- Joystick Background (ROXO)
     local bgJoystick = Instance.new("Frame")
     bgJoystick.Name = "BackgroundJoystick"
     bgJoystick.Size = UDim2.new(0, joystickSize, 0, joystickSize)
@@ -159,7 +164,7 @@ if isMobile then
     corner1.CornerRadius = UDim.new(0, 40)
     corner1.Parent = bgJoystick
     
-    -- Joystick Thumb
+    -- Joystick Thumb (ROXO CLARO)
     local thumbJoystick = Instance.new("Frame")
     thumbJoystick.Name = "ThumbJoystick"
     thumbJoystick.Size = UDim2.new(0, 40, 0, 40)
@@ -330,7 +335,6 @@ if not isMobile then
        Callback = function(Value)
           flyCam = Value
           if Value then
-              local lastMousePosition = Mouse.Hit.Position
               RunService.RenderStepped:Connect(function()
                   if not flyCam then return end
                   
@@ -628,4 +632,6 @@ else
     TabDesempenho:CreateLabel("💻 Versão PC Completa")
 end
 
-TabDesempenho:CreateLabel("Versão: 2.5 | Mobile + PC")
+TabDesempenho:CreateLabel("Versão: 2.6 | ROXO + Mobile")
+
+Rayfield:Notify({Name = "SZX Hub", Content = "✨ Menu roxo ativado! Use com cuidado.", Duration = 3})
