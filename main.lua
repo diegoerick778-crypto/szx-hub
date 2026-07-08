@@ -1,11 +1,12 @@
--- SZX HUB v3.0 - Interface Custom Sem Rayfield
--- Menu Roxo 100% Funcional
+-- SZX HUB v3.5 - Interface Custom Roxo TOTALMENTE FUNCIONAL
+-- Menu Roxo 100% com TODAS as funções
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
 -- ============= CRIAR GUI ROXO =============
 local screenGui = Instance.new("ScreenGui")
@@ -51,7 +52,7 @@ scrollFrame.Size = UDim2.new(1, -20, 1, -80)
 scrollFrame.Position = UDim2.new(0, 10, 0, 60)
 scrollFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 50)
 scrollFrame.BorderSizePixel = 0
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1000)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)
 scrollFrame.Parent = mainFrame
 
 local listLayout = Instance.new("UIListLayout")
@@ -67,18 +68,42 @@ local fpsCounterActive = false
 local walkSpeed = 16
 local fpsCounter = 0
 local killAuraRadius = 15
+local jumpPower = 50
+
+-- ============= ATUALIZAR CHARACTER =============
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    if noclipActive then
+        task.wait(0.1)
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    if Character:FindFirstChild("Humanoid") then
+        Character.Humanoid.WalkSpeed = walkSpeed
+        Character.Humanoid.JumpPower = jumpPower
+    end
+end)
 
 -- ============= FPS Counter =============
 RunService.RenderStepped:Connect(function(deltaTime)
     fpsCounter = math.floor(1 / deltaTime)
 end)
 
--- ============= NOCLIP =============
+-- ============= NOCLIP LOOP =============
 RunService.Stepped:Connect(function()
     if noclipActive and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = false
+            end
+        end
+    elseif not noclipActive and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "Humanoid" then
+                part.CanCollide = true
             end
         end
     end
@@ -213,21 +238,45 @@ local movCorner = Instance.new("UICorner")
 movCorner.CornerRadius = UDim.new(0, 8)
 movCorner.Parent = movSection
 
-createToggle(scrollFrame, "✨ NoClip", function(state)
+createToggle(scrollFrame, "✨ NoClip ON/OFF", function(state)
     noclipActive = state
+    if state then
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    else
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
 end)
 
-createButton(scrollFrame, "⬆️ Aumentar Velocidade", function()
+createButton(scrollFrame, "⬆️ +10 Velocidade", function()
     walkSpeed = math.min(walkSpeed + 10, 250)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
     end
 end)
 
-createButton(scrollFrame, "⬇️ Diminuir Velocidade", function()
+createButton(scrollFrame, "⬇️ -10 Velocidade", function()
     walkSpeed = math.max(walkSpeed - 10, 16)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+    end
+end)
+
+createButton(scrollFrame, "📍 Resetar Velocidade", function()
+    walkSpeed = 16
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
     end
 end)
 
@@ -238,6 +287,20 @@ createToggle(scrollFrame, "👻 Invisível", function(state)
                 part.Transparency = state and 0.5 or 0
             end
         end
+    end
+end)
+
+createButton(scrollFrame, "⬆️ +10 Jump Power", function()
+    jumpPower = math.min(jumpPower + 10, 200)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = jumpPower
+    end
+end)
+
+createButton(scrollFrame, "⬇️ -10 Jump Power", function()
+    jumpPower = math.max(jumpPower - 10, 50)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = jumpPower
     end
 end)
 
@@ -263,11 +326,11 @@ createToggle(scrollFrame, "⚔️ Kill Aura", function(state)
     killAuraActive = state
 end)
 
-createButton(scrollFrame, "📈 Aumentar Alcance", function()
+createButton(scrollFrame, "📈 +5 Alcance Aura", function()
     killAuraRadius = math.min(killAuraRadius + 5, 50)
 end)
 
-createButton(scrollFrame, "📉 Diminuir Alcance", function()
+createButton(scrollFrame, "📉 -5 Alcance Aura", function()
     killAuraRadius = math.max(killAuraRadius - 5, 5)
 end)
 
@@ -286,6 +349,15 @@ createToggle(scrollFrame, "👁️ ESP", function(state)
                     player.Character.szx_Highlight:Destroy()
                 end
             end
+        end
+    end
+end)
+
+createToggle(scrollFrame, "📦 Expandir Hitbox", function(state)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.Size = state and Vector3.new(12, 12, 12) or Vector3.new(2, 2, 2)
+            player.Character.HumanoidRootPart.Transparency = state and 0.6 or 1
         end
     end
 end)
@@ -316,8 +388,20 @@ createButton(scrollFrame, "📍 Teleportar Mais Próximo", function()
             end
         end
     end
-    if target and LocalPlayer.Character then
+    if target and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+    end
+end)
+
+createButton(scrollFrame, "🎒 Coletar Itens", function()
+    local count = 0
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("TouchTransmitter") and v.Parent and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v.Parent, 0)
+            task.wait(0.02)
+            firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v.Parent, 1)
+            count = count + 1
+        end
     end
 end)
 
@@ -353,7 +437,7 @@ createButton(scrollFrame, "🌪️ Fling Mais Próximo", function()
     end
 end)
 
-createButton(scrollFrame, "🔄 Multi-Fling", function()
+createButton(scrollFrame, "🔄 Multi-Fling Todos", function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local humanoidRootPart = p.Character.HumanoidRootPart
@@ -377,12 +461,16 @@ local visCorner = Instance.new("UICorner")
 visCorner.CornerRadius = UDim.new(0, 8)
 visCorner.Parent = visSection
 
-createButton(scrollFrame, "📸 FOV +", function()
+createButton(scrollFrame, "📸 FOV +5", function()
     Camera.FieldOfView = math.min(Camera.FieldOfView + 5, 120)
 end)
 
-createButton(scrollFrame, "📸 FOV -", function()
+createButton(scrollFrame, "📸 FOV -5", function()
     Camera.FieldOfView = math.max(Camera.FieldOfView - 5, 70)
+end)
+
+createButton(scrollFrame, "🔄 FOV Reset", function()
+    Camera.FieldOfView = 70
 end)
 
 createToggle(scrollFrame, "📊 FPS Counter", function(state)
@@ -391,12 +479,13 @@ end)
 
 -- SEÇÃO INFO
 local infoSection = Instance.new("TextLabel")
-infoSection.Size = UDim2.new(1, -20, 0, 30)
+infoSection.Size = UDim2.new(1, -20, 0, 50)
 infoSection.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 infoSection.TextColor3 = Color3.fromRGB(255, 255, 255)
-infoSection.TextSize = 14
+infoSection.TextSize = 12
 infoSection.Font = Enum.Font.Gotham
-infoSection.Text = "📊 FPS: " .. fpsCounter .. " | Velocidade: " .. walkSpeed
+infoSection.Text = "📊 FPS: " .. fpsCounter .. " | VEL: " .. walkSpeed .. " | JUMP: " .. jumpPower
+infoSection.TextWrapped = true
 infoSection.Parent = scrollFrame
 
 local infoCorner = Instance.new("UICorner")
@@ -405,7 +494,11 @@ infoCorner.Parent = infoSection
 
 -- Atualizar info em tempo real
 RunService.RenderStepped:Connect(function()
-    infoSection.Text = "📊 FPS: " .. fpsCounter .. " | Velocidade: " .. walkSpeed
+    if fpsCounterActive then
+        infoSection.Text = "📊 FPS: " .. fpsCounter .. " | VEL: " .. walkSpeed .. " | JUMP: " .. jumpPower .. " | AURA: " .. killAuraRadius
+    else
+        infoSection.Text = "VEL: " .. walkSpeed .. " | JUMP: " .. jumpPower .. " | AURA: " .. killAuraRadius .. " | ESC = Menu"
+    end
 end)
 
 -- ============= FECHAR MENU COM ESC =============
@@ -417,5 +510,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- ============= MENSAGEM =============
-print("✨ SZX HUB ROXO CARREGADO! ✨")
+print("✨ SZX HUB v3.5 ROXO CARREGADO! ✨")
 print("Pressione ESC para mostrar/esconder o menu")
+print("🟣 Menu Roxo Funcional 100%")
