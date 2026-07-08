@@ -18,6 +18,16 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
+-- Customizar cores do menu para roxo
+local Purple = {
+   SchemeColor = "Purple",
+   Background = Color3.fromRGB(45, 0, 60),
+   Surface = Color3.fromRGB(60, 0, 80),
+   Contrast = Color3.fromRGB(120, 30, 160),
+   TextColor = Color3.fromRGB(220, 180, 255),
+   OutlineColor = Color3.fromRGB(100, 0, 150)
+}
+
 -- SERVIÇOS DO ROBLOX
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -25,6 +35,10 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
+
+-- VERIFICAR SE É MOBILE
+local isMobile = UserInputService:GetLastInputType() == Enum.UserInputType.Touch or 
+                 game:GetService("GuiService"):IsTenFootInterface()
 
 -- ABAS
 local TabMovimento = Window:CreateTab("Movimento", "rewind")
@@ -116,6 +130,137 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- CONTROLES MOBILE - JOYSTICK VIRTUAL
+local mobileJoystick = nil
+if isMobile then
+    local screenSize = game:GetService("GuiService"):GetScreenSize()
+    local joystickSize = 80
+    
+    mobileJoystick = Instance.new("Folder")
+    mobileJoystick.Name = "MobileJoystick"
+    mobileJoystick.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    local mainGui = Instance.new("ScreenGui")
+    mainGui.Name = "JoystickGui"
+    mainGui.ResetOnSpawn = false
+    mainGui.Parent = mobileJoystick
+    
+    -- Joystick Background
+    local bgJoystick = Instance.new("Frame")
+    bgJoystick.Name = "BackgroundJoystick"
+    bgJoystick.Size = UDim2.new(0, joystickSize, 0, joystickSize)
+    bgJoystick.Position = UDim2.new(0, 20, 1, -joystickSize - 20)
+    bgJoystick.BackgroundColor3 = Color3.fromRGB(100, 0, 150)
+    bgJoystick.BackgroundTransparency = 0.5
+    bgJoystick.BorderSizePixel = 0
+    bgJoystick.Parent = mainGui
+    
+    local corner1 = Instance.new("UICorner")
+    corner1.CornerRadius = UDim.new(0, 40)
+    corner1.Parent = bgJoystick
+    
+    -- Joystick Thumb
+    local thumbJoystick = Instance.new("Frame")
+    thumbJoystick.Name = "ThumbJoystick"
+    thumbJoystick.Size = UDim2.new(0, 40, 0, 40)
+    thumbJoystick.Position = UDim2.new(0.5, -20, 0.5, -20)
+    thumbJoystick.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
+    thumbJoystick.BorderSizePixel = 0
+    thumbJoystick.Parent = bgJoystick
+    
+    local corner2 = Instance.new("UICorner")
+    corner2.CornerRadius = UDim.new(0, 20)
+    corner2.Parent = thumbJoystick
+    
+    -- Botão de ataque (lado direito)
+    local attackButton = Instance.new("TextButton")
+    attackButton.Name = "AttackButton"
+    attackButton.Size = UDim2.new(0, 70, 0, 70)
+    attackButton.Position = UDim2.new(1, -90, 1, -90)
+    attackButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    attackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    attackButton.TextSize = 24
+    attackButton.Text = "⚔️"
+    attackButton.BorderSizePixel = 0
+    attackButton.Parent = mainGui
+    
+    local cornerAttack = Instance.new("UICorner")
+    cornerAttack.CornerRadius = UDim.new(0, 35)
+    cornerAttack.Parent = attackButton
+    
+    -- Botão de abilidade (direita)
+    local abilityButton = Instance.new("TextButton")
+    abilityButton.Name = "AbilityButton"
+    abilityButton.Size = UDim2.new(0, 70, 0, 70)
+    abilityButton.Position = UDim2.new(1, -90, 1, -170)
+    abilityButton.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    abilityButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    abilityButton.TextSize = 24
+    abilityButton.Text = "🔥"
+    abilityButton.BorderSizePixel = 0
+    abilityButton.Parent = mainGui
+    
+    local cornerAbility = Instance.new("UICorner")
+    cornerAbility.CornerRadius = UDim.new(0, 35)
+    cornerAbility.Parent = abilityButton
+    
+    -- Controlar movimento do joystick
+    local joystickActive = false
+    local joystickConnection
+    
+    bgJoystick.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.Touch then
+            joystickActive = true
+        end
+    end)
+    
+    bgJoystick.InputEnded:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            joystickActive = false
+            thumbJoystick:TweenPosition(UDim2.new(0.5, -20, 0.5, -20), "Out", "Quad", 0.1, true)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input, gameProcessed)
+        if joystickActive and input.UserInputType == Enum.UserInputType.Touch then
+            local touchPos = input.Position
+            local bgPos = bgJoystick.AbsolutePosition
+            local bgSize = bgJoystick.AbsoluteSize
+            
+            local relativeX = touchPos.X - (bgPos.X + bgSize.X / 2)
+            local relativeY = touchPos.Y - (bgPos.Y + bgSize.Y / 2)
+            
+            local magnitude = math.sqrt(relativeX^2 + relativeY^2)
+            local maxDistance = bgSize.X / 2 - 20
+            
+            if magnitude > maxDistance then
+                relativeX = (relativeX / magnitude) * maxDistance
+                relativeY = (relativeY / magnitude) * maxDistance
+            end
+            
+            thumbJoystick.Position = UDim2.new(0.5, relativeX - 20, 0.5, relativeY - 20)
+            
+            -- Aplicar movimento
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local moveDirection = Vector3.new(relativeX, 0, relativeY).Unit * 0.5
+                    humanoid:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position + moveDirection * 2)
+                end
+            end
+        end
+    end)
+    
+    -- Botão de ataque
+    attackButton.MouseButton1Down:Connect(function()
+        if LocalPlayer.Character then
+            local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then tool:Activate() end
+        end
+    end)
+end
+
 -- ==================== MOVIMENTO ====================
 TabMovimento:CreateSlider({
    Name = "Velocidade Ajustável",
@@ -178,56 +323,58 @@ TabMovimento:CreateSlider({
    end,
 })
 
-TabMovimento:CreateToggle({
-   Name = "🚀 Voo de Câmera",
-   CurrentValue = false,
-   Callback = function(Value)
-      flyCam = Value
-      if Value then
-          local lastMousePosition = Mouse.Hit.Position
-          RunService.RenderStepped:Connect(function()
-              if not flyCam then return end
-              
-              local moveDirection = Vector3.new(0, 0, 0)
-              
-              if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                  moveDirection = moveDirection + (Camera.CFrame.LookVector)
-              end
-              if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                  moveDirection = moveDirection - (Camera.CFrame.LookVector)
-              end
-              if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                  moveDirection = moveDirection - (Camera.CFrame.RightVector)
-              end
-              if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                  moveDirection = moveDirection + (Camera.CFrame.RightVector)
-              end
-              if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                  moveDirection = moveDirection + Vector3.new(0, 1, 0)
-              end
-              if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                  moveDirection = moveDirection - Vector3.new(0, 1, 0)
-              end
-              
-              if moveDirection.Magnitude > 0 then
-                  Camera.CFrame = Camera.CFrame + (moveDirection.Unit * flySpeed)
-              end
-          end)
-      end
-   end,
-})
+if not isMobile then
+    TabMovimento:CreateToggle({
+       Name = "🚀 Voo de Câmera",
+       CurrentValue = false,
+       Callback = function(Value)
+          flyCam = Value
+          if Value then
+              local lastMousePosition = Mouse.Hit.Position
+              RunService.RenderStepped:Connect(function()
+                  if not flyCam then return end
+                  
+                  local moveDirection = Vector3.new(0, 0, 0)
+                  
+                  if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                      moveDirection = moveDirection + (Camera.CFrame.LookVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                      moveDirection = moveDirection - (Camera.CFrame.LookVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                      moveDirection = moveDirection - (Camera.CFrame.RightVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                      moveDirection = moveDirection + (Camera.CFrame.RightVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                      moveDirection = moveDirection + Vector3.new(0, 1, 0)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                      moveDirection = moveDirection - Vector3.new(0, 1, 0)
+                  end
+                  
+                  if moveDirection.Magnitude > 0 then
+                      Camera.CFrame = Camera.CFrame + (moveDirection.Unit * flySpeed)
+                  end
+              end)
+          end
+       end,
+    })
 
-TabMovimento:CreateSlider({
-   Name = "Velocidade do Voo",
-   Min = 0.5,
-   Max = 3,
-   DefaultValue = 1,
-   Increment = 0.1,
-   ValueName = "VooSpeed",
-   Callback = function(Value)
-      flySpeed = Value
-   end,
-})
+    TabMovimento:CreateSlider({
+       Name = "Velocidade do Voo",
+       Min = 0.5,
+       Max = 3,
+       DefaultValue = 1,
+       Increment = 0.1,
+       ValueName = "VooSpeed",
+       Callback = function(Value)
+          flySpeed = Value
+       end,
+    })
+end
 
 -- ==================== COMBATE ====================
 TabCombate:CreateToggle({
@@ -413,28 +560,30 @@ TabVisual:CreateToggle({
    end,
 })
 
-TabVisual:CreateToggle({
-   Name = "🌙 Zoom Dinâmico",
-   CurrentValue = false,
-   Callback = function(Value)
-      if Value then
-          task.spawn(function()
-              local scrollWheelConnection
-              scrollWheelConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                  if gameProcessed then return end
-                  if input.UserInputType == Enum.UserInputType.MouseWheel then
-                      local fov = Camera.FieldOfView
-                      if input.Position.Z > 0 then
-                          Camera.FieldOfView = math.max(1, fov - 5)
-                      else
-                          Camera.FieldOfView = math.min(120, fov + 5)
+if not isMobile then
+    TabVisual:CreateToggle({
+       Name = "🌙 Zoom Dinâmico",
+       CurrentValue = false,
+       Callback = function(Value)
+          if Value then
+              task.spawn(function()
+                  local scrollWheelConnection
+                  scrollWheelConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                      if gameProcessed then return end
+                      if input.UserInputType == Enum.UserInputType.MouseWheel then
+                          local fov = Camera.FieldOfView
+                          if input.Position.Z > 0 then
+                              Camera.FieldOfView = math.max(1, fov - 5)
+                          else
+                              Camera.FieldOfView = math.min(120, fov + 5)
+                          end
                       end
-                  end
+                  end)
               end)
-          end)
-      end
-   end,
-})
+          end
+       end,
+    })
+end
 
 -- ==================== DESEMPENHO ====================
 TabDesempenho:CreateToggle({
@@ -471,4 +620,12 @@ TabDesempenho:CreateButton({
    end,
 })
 
-TabDesempenho:CreateLabel("Versão: 2.0 | Melhorado")
+if isMobile then
+    TabDesempenho:CreateLabel("📱 Modo Mobile Ativado")
+    TabDesempenho:CreateLabel("Use o joystick para andar")
+    TabDesempenho:CreateLabel("Botões de ataque à direita")
+else
+    TabDesempenho:CreateLabel("💻 Versão PC Completa")
+end
+
+TabDesempenho:CreateLabel("Versão: 2.5 | Mobile + PC")
