@@ -24,12 +24,15 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
 
 -- ABAS
 local TabMovimento = Window:CreateTab("Movimento", "rewind")
 local TabCombate = Window:CreateTab("Combate & Visual", "swords")
 local TabTeleporte = Window:CreateTab("Teleportes", "map-pin")
 local TabJogadores = Window:CreateTab("Painel de Jogadores", "users")
+local TabVisual = Window:CreateTab("Visual & Camera", "eye")
+local TabDesempenho = Window:CreateTab("Desempenho", "chart-bar")
 
 -- VARIÁVEIS DE ESTADO
 local noclipActive = false
@@ -37,14 +40,30 @@ local killAuraActive = false
 local antiFlingActive = false
 local espActive = false
 local killAuraRadius = 15
-
-local FPSLabel = TabCombate:CreateLabel("Medidor de Desempenho desativado")
+local fpsLimit = 60
+local fpsCounterActive = false
+local flingActive = false
+local flyCam = false
+local flySpeed = 1
+local flyCamHeight = 10
 
 -- FPS Counter
 local fpsCounter = 0
+local lastFpsUpdate = 0
 RunService.RenderStepped:Connect(function(deltaTime)
     fpsCounter = math.floor(1 / deltaTime)
+    lastFpsUpdate = lastFpsUpdate + deltaTime
 end)
+
+-- FPS Performance Monitor
+local FPSLabel = TabDesempenho:CreateLabel("FPS: 0")
+local function updateFPSDisplay()
+    while fpsCounterActive do
+        FPSLabel:Set("🎮 FPS: " .. fpsCounter .. " | Limite: " .. fpsLimit)
+        task.wait(0.5)
+    end
+    FPSLabel:Set("📊 FPS Counter desativado")
+end
 
 -- KILL AURA
 local SelectionSphere = Instance.new("SelectionSphere")
@@ -82,6 +101,17 @@ RunService.Stepped:Connect(function()
             if part:IsA("BasePart") then
                 part.CanCollide = false
             end
+        end
+    end
+end)
+
+-- ANTI-FLING DETECTOR
+RunService.Heartbeat:Connect(function()
+    if antiFlingActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+        local velocity = humanoidRootPart.Velocity.Magnitude
+        if velocity > 100 then
+            humanoidRootPart.Velocity = Vector3.new(0, humanoidRootPart.Velocity.Y, 0)
         end
     end
 end)
@@ -131,6 +161,71 @@ TabMovimento:CreateToggle({
       if Value then
           Rayfield:Notify({Name = "Segurança", Content = "Anti-Fling Ativado!", Duration = 2})
       end
+   end,
+})
+
+TabMovimento:CreateSlider({
+   Name = "Jump Power",
+   Min = 50,
+   Max = 200,
+   DefaultValue = 50,
+   Increment = 5,
+   ValueName = "JumpPower",
+   Callback = function(Value)
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+          LocalPlayer.Character.Humanoid.JumpPower = Value
+      end
+   end,
+})
+
+TabMovimento:CreateToggle({
+   Name = "🚀 Voo de Câmera",
+   CurrentValue = false,
+   Callback = function(Value)
+      flyCam = Value
+      if Value then
+          local lastMousePosition = Mouse.Hit.Position
+          RunService.RenderStepped:Connect(function()
+              if not flyCam then return end
+              
+              local moveDirection = Vector3.new(0, 0, 0)
+              
+              if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                  moveDirection = moveDirection + (Camera.CFrame.LookVector)
+              end
+              if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                  moveDirection = moveDirection - (Camera.CFrame.LookVector)
+              end
+              if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                  moveDirection = moveDirection - (Camera.CFrame.RightVector)
+              end
+              if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                  moveDirection = moveDirection + (Camera.CFrame.RightVector)
+              end
+              if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                  moveDirection = moveDirection + Vector3.new(0, 1, 0)
+              end
+              if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                  moveDirection = moveDirection - Vector3.new(0, 1, 0)
+              end
+              
+              if moveDirection.Magnitude > 0 then
+                  Camera.CFrame = Camera.CFrame + (moveDirection.Unit * flySpeed)
+              end
+          end)
+      end
+   end,
+})
+
+TabMovimento:CreateSlider({
+   Name = "Velocidade do Voo",
+   Min = 0.5,
+   Max = 3,
+   DefaultValue = 1,
+   Increment = 0.1,
+   ValueName = "VooSpeed",
+   Callback = function(Value)
+      flySpeed = Value
    end,
 })
 
@@ -191,20 +286,6 @@ TabCombate:CreateToggle({
    end,
 })
 
-TabCombate:CreateToggle({
-   Name = "📊 FPS",
-   CurrentValue = false,
-   Callback = function(Value)
-      task.spawn(function()
-          while Value do
-              FPSLabel:Set("FPS: " .. fpsCounter)
-              task.wait(0.5)
-          end
-          FPSLabel:Set("Medidor desativado")
-      end)
-   end,
-})
-
 TabCombate:CreateSlider({
    Name = "FOV",
    Min = 70,
@@ -255,6 +336,27 @@ TabTeleporte:CreateButton({
    end,
 })
 
+-- Teleporte Customizado
+TabTeleporte:CreateInput({
+   Name = "Teleportar para Coordenadas",
+   PlaceholderText = "X, Y, Z",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local coords = {}
+      for num in Text:gmatch("[^,]+") do
+          table.insert(coords, tonumber(num:match("^%s*(.-)%s*$")))
+      end
+      if coords[1] and coords[2] and coords[3] then
+          if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+              LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(coords[1], coords[2], coords[3])
+              Rayfield:Notify({Name = "Teleporte", Content = "Teleportado para " .. Text, Duration = 2})
+          end
+      else
+          Rayfield:Notify({Name = "Erro", Content = "Formato inválido! Use: X, Y, Z", Duration = 2})
+      end
+   end,
+})
+
 -- ==================== PAINEL JOGADORES ====================
 TabJogadores:CreateButton({
    Name = "🌪️ Fling Attack",
@@ -278,3 +380,95 @@ TabJogadores:CreateButton({
       end
    end,
 })
+
+TabJogadores:CreateButton({
+   Name = "🔄 Multi-Fling",
+   Callback = function()
+      for _, p in pairs(Players:GetPlayers()) do
+          if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+              local humanoidRootPart = p.Character.HumanoidRootPart
+              humanoidRootPart.Velocity = Vector3.new(math.random(-100, 100), math.random(50, 100), math.random(-100, 100))
+              task.wait(0.1)
+          end
+      end
+      Rayfield:Notify({Name = "Multi-Fling", Content = "Todos foram atacados!", Duration = 2})
+   end,
+})
+
+-- ==================== VISUAL & CAMERA ====================
+TabVisual:CreateToggle({
+   Name = "🌈 Modo Arco-Íris",
+   CurrentValue = false,
+   Callback = function(Value)
+      if Value then
+          task.spawn(function()
+              local hue = 0
+              while Value do
+                  Camera.FieldOfView = 70 + math.sin(hue) * 5
+                  hue = hue + 0.02
+                  task.wait(0.05)
+              end
+          end)
+      end
+   end,
+})
+
+TabVisual:CreateToggle({
+   Name = "🌙 Zoom Dinâmico",
+   CurrentValue = false,
+   Callback = function(Value)
+      if Value then
+          task.spawn(function()
+              local scrollWheelConnection
+              scrollWheelConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                  if gameProcessed then return end
+                  if input.UserInputType == Enum.UserInputType.MouseWheel then
+                      local fov = Camera.FieldOfView
+                      if input.Position.Z > 0 then
+                          Camera.FieldOfView = math.max(1, fov - 5)
+                      else
+                          Camera.FieldOfView = math.min(120, fov + 5)
+                      end
+                  end
+              end)
+          end)
+      end
+   end,
+})
+
+-- ==================== DESEMPENHO ====================
+TabDesempenho:CreateToggle({
+   Name = "📊 Mostrar FPS",
+   CurrentValue = false,
+   Callback = function(Value)
+      fpsCounterActive = Value
+      if Value then
+          task.spawn(updateFPSDisplay)
+      end
+   end,
+})
+
+TabDesempenho:CreateSlider({
+   Name = "Limite de FPS",
+   Min = 30,
+   Max = 240,
+   DefaultValue = 60,
+   Increment = 10,
+   ValueName = "FPS",
+   Callback = function(Value)
+      fpsLimit = Value
+      RunService:Set3dRenderingEnabled(true)
+   end,
+})
+
+TabDesempenho:CreateLabel("⚙️ Otimizações do Sistema")
+
+TabDesempenho:CreateButton({
+   Name = "🧹 Limpar Cache",
+   Callback = function()
+      collectgarbage("collect")
+      Rayfield:Notify({Name = "Cache", Content = "Cache limpo!", Duration = 2})
+   end,
+})
+
+TabDesempenho:CreateLabel("Versão: 2.0 | Melhorado")
