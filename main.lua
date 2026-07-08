@@ -1,4 +1,4 @@
--- SZX HUB v5.0 - Menu RGB com Barra Lateral Deslizável
+-- SZX HUB v5.1 - Menu RGB com Fling FUNCIONANDO + Chat Message
 -- Interface Moderna, Colorida e SUPER Funcional
 
 local Players = game:GetService("Players")
@@ -7,6 +7,20 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ============= MENSAGEM NO CHAT =============
+local function sendChatMessage(text)
+    if ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") then
+        local messageEvent = ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+        if messageEvent then
+            messageEvent:FireServer(text, "All")
+        end
+    end
+end
+
+-- Enviar mensagem ao carregar
+sendChatMessage("szx-hub loaded! ✨💯")
 
 -- ============= CRIAR GUI RGB =============
 local screenGui = Instance.new("ScreenGui")
@@ -356,6 +370,48 @@ local function createToggle(parent, text, onToggle)
     return container
 end
 
+-- ============= FLING FUNÇÃO APRIMORADA =============
+local function flingPlayer(target)
+    if not target or not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local hrp = target.Character.HumanoidRootPart
+    local humanoid = target.Character:FindFirstChild("Humanoid")
+    
+    if not humanoid then return end
+    
+    -- Aplicar força massiva
+    hrp.Velocity = Vector3.new(
+        math.random(-150, 150),
+        math.random(100, 200),
+        math.random(-150, 150)
+    )
+    
+    -- Aplicar AssemblyLinearVelocity também
+    pcall(function()
+        hrp.AssemblyLinearVelocity = Vector3.new(
+            math.random(-150, 150),
+            math.random(100, 200),
+            math.random(-150, 150)
+        )
+    end)
+    
+    -- Desativar colisão temporária
+    for _, part in pairs(target.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+    
+    task.wait(0.2)
+    
+    -- Reativar colisão
+    for _, part in pairs(target.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+        end
+    end
+end
+
 -- ============= BOTÕES DO MENU =============
 
 -- MOVIMENTO
@@ -470,8 +526,8 @@ createButton(scrollFrame, "📍 TP Mais Próximo", function()
     end
 end)
 
--- ATAQUE
-createButton(scrollFrame, "🌪️ Fling", function()
+-- ATAQUE COM FLING FUNCIONANDO
+createButton(scrollFrame, "🌪️ Fling Próximo", function()
     local target = nil
     local maxDist = math.huge
     for _, p in pairs(Players:GetPlayers()) do
@@ -483,18 +539,16 @@ createButton(scrollFrame, "🌪️ Fling", function()
             end
         end
     end
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = target.Character.HumanoidRootPart
-        hrp.Velocity = Vector3.new(math.random(-100, 100), math.random(50, 100), math.random(-100, 100))
+    if target then
+        flingPlayer(target)
     end
 end)
 
 createButton(scrollFrame, "🔄 Multi-Fling", function()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = p.Character.HumanoidRootPart
-            hrp.Velocity = Vector3.new(math.random(-100, 100), math.random(50, 100), math.random(-100, 100))
-            task.wait(0.05)
+        if p ~= LocalPlayer and p.Character then
+            flingPlayer(p)
+            task.wait(0.1)
         end
     end
 end)
@@ -542,6 +596,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✨ SZX HUB v5.0 RGB CARREGADO!")
-print("Menu RGB animado com barra lateral deslizável!")
+print("✨ SZX HUB v5.1 RGB CARREGADO!")
+print("🌈 Fling FUNCIONANDO + Chat Message!")
 print("Pressione ESC para abrir/fechar")
