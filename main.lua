@@ -1,39 +1,53 @@
--- SZX HUB v4.0 - Menu Pequeno, Movível e SUPER Funcional
--- Interface Moderna e Limpa
+-- SZX HUB v5.0 - Menu RGB com Barra Lateral Deslizável
+-- Interface Moderna, Colorida e SUPER Funcional
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
--- ============= CRIAR GUI ROXO PEQUENO =============
+-- ============= CRIAR GUI RGB =============
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SZXHubGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Frame Principal PEQUENO e MOVÍVEL
+-- Frame Principal com RGB
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 280, 0, 400)
 mainFrame.Position = UDim2.new(0.02, 0, 0.2, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 35)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- Sombra
-local shadow = Instance.new("UIStroke")
-shadow.Color = Color3.fromRGB(150, 50, 200)
-shadow.Thickness = 2
-shadow.Parent = mainFrame
+-- Stroke RGB animado
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255, 0, 0)
+stroke.Thickness = 2
+stroke.Parent = mainFrame
 
 -- Canto Arredondado
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = mainFrame
 
--- Header MOVÍVEL
+-- Barra Lateral RGB Deslizável
+local sideBar = Instance.new("Frame")
+sideBar.Name = "SideBar"
+sideBar.Size = UDim2.new(0, 4, 1, 0)
+sideBar.Position = UDim2.new(0, 0, 0, 0)
+sideBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+sideBar.BorderSizePixel = 0
+sideBar.Parent = mainFrame
+
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 2)
+barCorner.Parent = sideBar
+
+-- Header RGB
 local headerFrame = Instance.new("Frame")
 headerFrame.Name = "Header"
 headerFrame.Size = UDim2.new(1, 0, 0, 35)
@@ -46,16 +60,25 @@ local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 12)
 headerCorner.Parent = headerFrame
 
+-- Gradiente no Header
+local headerGradient = Instance.new("UIGradient")
+headerGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
+})
+headerGradient.Parent = headerFrame
+
 -- Título
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "Title"
 titleLabel.Size = UDim2.new(0.7, 0, 1, 0)
 titleLabel.Position = UDim2.new(0, 8, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 200, 255)
-titleLabel.TextSize = 14
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "SZX HUB"
+titleLabel.Text = "✨ SZX HUB ✨"
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = headerFrame
 
@@ -64,7 +87,7 @@ local closeBtn = Instance.new("TextButton")
 closeBtn.Name = "CloseBtn"
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -32, 0, 2)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.TextSize = 16
 closeBtn.Font = Enum.Font.GothamBold
@@ -80,21 +103,20 @@ closeBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
 end)
 
--- Scroll Frame para conteúdo
+-- Scroll Frame
 local scrollFrame = Instance.new("ScrollingFrame")
 scrollFrame.Name = "ScrollFrame"
 scrollFrame.Size = UDim2.new(1, 0, 1, -35)
 scrollFrame.Position = UDim2.new(0, 0, 0, 35)
-scrollFrame.BackgroundColor3 = Color3.fromRGB(35, 0, 50)
+scrollFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 35)
 scrollFrame.BorderSizePixel = 0
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 800)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 900)
 scrollFrame.Parent = mainFrame
 
 local listLayout = Instance.new("UIListLayout")
 listLayout.Padding = UDim.new(0, 6)
 listLayout.Parent = scrollFrame
 
--- Padding
 local padding = Instance.new("UIPadding")
 padding.PaddingLeft = UDim.new(0, 8)
 padding.PaddingRight = UDim.new(0, 8)
@@ -102,9 +124,31 @@ padding.PaddingTop = UDim.new(0, 8)
 padding.PaddingBottom = UDim.new(0, 8)
 padding.Parent = scrollFrame
 
+-- ============= ANIMAÇÃO RGB =============
+local rgbHue = 0
+task.spawn(function()
+    while true do
+        rgbHue = (rgbHue + 0.005) % 1
+        
+        -- Animar stroke
+        stroke.Color = Color3.fromHSV(rgbHue, 1, 1)
+        
+        -- Animar sidebar
+        sideBar.BackgroundColor3 = Color3.fromHSV(rgbHue, 1, 1)
+        
+        -- Animar header gradient
+        headerGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromHSV(rgbHue, 1, 1)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromHSV((rgbHue + 0.3) % 1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV((rgbHue + 0.6) % 1, 1, 1))
+        })
+        
+        task.wait(0.05)
+    end
+end)
+
 -- ============= FAZER MOVÍVEL =============
 local dragging = false
-local dragInput = nil
 local dragStart = nil
 local startPos = nil
 
@@ -114,17 +158,17 @@ headerFrame.InputBegan:Connect(function(input, gameProcessed)
         dragging = true
         dragStart = input.Position
         startPos = mainFrame.Position
-        dragInput = input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-                dragInput:Disconnect()
-            end
-        end)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input, gameProcessed)
-    if dragging and input == dragStart then
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
         mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
@@ -216,12 +260,12 @@ task.spawn(function()
     end
 end)
 
--- ============= FUNÇÃO CRIAR BOTÃO =============
+-- ============= FUNÇÃO CRIAR BOTÃO RGB =============
 local function createButton(parent, text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 32)
-    btn.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
-    btn.TextColor3 = Color3.fromRGB(220, 180, 255)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.TextSize = 13
     btn.Font = Enum.Font.Gotham
     btn.Text = text
@@ -232,28 +276,35 @@ local function createButton(parent, text, callback)
     btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = btn
     
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 200)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 0, 150))
+    })
+    btnGradient.Parent = btn
+    
     btn.MouseButton1Click:Connect(function()
         callback()
-        btn.BackgroundColor3 = Color3.fromRGB(150, 50, 200)
+        btn.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
         task.wait(0.1)
-        btn.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
+        btn.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
     end)
     
     btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
+        btn.BackgroundColor3 = Color3.fromRGB(100, 0, 180)
     end)
     btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
+        btn.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
     end)
     
     return btn
 end
 
--- ============= FUNÇÃO CRIAR TOGGLE =============
+-- ============= FUNÇÃO CRIAR TOGGLE RGB =============
 local function createToggle(parent, text, onToggle)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 32)
-    container.BackgroundColor3 = Color3.fromRGB(60, 0, 100)
+    container.BackgroundColor3 = Color3.fromRGB(40, 0, 70)
     container.BorderSizePixel = 0
     container.Parent = parent
     
@@ -261,11 +312,18 @@ local function createToggle(parent, text, onToggle)
     containerCorner.CornerRadius = UDim.new(0, 6)
     containerCorner.Parent = container
     
+    local containerGradient = Instance.new("UIGradient")
+    containerGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 180)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 0, 100))
+    })
+    containerGradient.Parent = container
+    
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.6, -5, 1, 0)
     label.Position = UDim2.new(0, 5, 0, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(220, 180, 255)
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 12
     label.Font = Enum.Font.Gotham
     label.Text = text
@@ -453,8 +511,8 @@ end)
 -- INFO
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, 0, 0, 40)
-infoLabel.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-infoLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+infoLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+infoLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 infoLabel.TextSize = 11
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.Text = "FPS: 0"
@@ -464,6 +522,13 @@ infoLabel.Parent = scrollFrame
 local infoCorner = Instance.new("UICorner")
 infoCorner.CornerRadius = UDim.new(0, 6)
 infoCorner.Parent = infoLabel
+
+local infoGradient = Instance.new("UIGradient")
+infoGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 100)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 60))
+})
+infoGradient.Parent = infoLabel
 
 RunService.RenderStepped:Connect(function()
     infoLabel.Text = "FPS: " .. fpsCounter .. "\nVEL: " .. walkSpeed .. " | JUMP: " .. jumpPower .. "\nAURA: " .. killAuraRadius
@@ -477,6 +542,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✨ SZX HUB v4.0 CARREGADO!")
-print("Menu pequeno, movível e SUPER funcional!")
+print("✨ SZX HUB v5.0 RGB CARREGADO!")
+print("Menu RGB animado com barra lateral deslizável!")
 print("Pressione ESC para abrir/fechar")
